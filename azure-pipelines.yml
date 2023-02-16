@@ -21,11 +21,11 @@ variables:
   tag: '$(Build.BuildId)'
 
 stages:
-- stage: BuildAndTest
-  displayName: Build and Test
+- stage: Build
+  displayName: Build
   jobs:
-  - job: BuildAndTest
-    displayName: BuildAndTest
+  - job: Build
+    displayName: Build
     pool:
       vmImage: 'Ubuntu-16.04'
 
