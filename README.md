@@ -1,20 +1,39 @@
-# Introduction 
-TODO: Give a short introduction of your project. Let this section explain the objectives or the motivation behind this project. 
+# .NET 6 Hello World
 
-# Getting Started
-TODO: Guide users through getting your code up and running on their own system. In this section you can talk about:
-1.	Installation process
-2.	Software dependencies
-3.	Latest releases
-4.	API references
+This sample demonstrates a tiny Hello World .NET Core app for [App Service Web App](https://docs.microsoft.com/azure/app-service-web). This sample can be used in a .NET Azure App Service app as well as in a Custom Container Azure App Service app.
 
-# Build and Test
-TODO: Describe and show how to build your code and run the tests. 
+## Log in to Azure Container Registry
 
-# Contribute
-TODO: Explain how other users and developers can contribute to make your code better. 
+Using the Azure CLI, log in to the Azure Container Registry (ACR):
 
-If you want to learn more about creating good readme files then refer the following [guidelines](https://docs.microsoft.com/en-us/azure/devops/repos/git/create-a-readme?view=azure-devops). You can also seek inspiration from the below readme files:
-- [ASP.NET Core](https://github.com/aspnet/Home)
-- [Visual Studio Code](https://github.com/Microsoft/vscode)
-- [Chakra Core](https://github.com/Microsoft/ChakraCore)
+```azurecli
+az acr login -n <your_registry_name>
+```
+
+## Running in a Docker Container
+
+This repository contains 2 Dockerfiles, a Linux container and a Windows container.
+
+### Publish the Windows image to your Registry
+
+To build the Windows image locally and publish to ACR, run the following command:
+
+```docker
+docker build -f Dockerfile.windows -t dotnetcore-docs-hello-world-windows . 
+docker tag dotnetcore-docs-hello-world-windows <your_registry_name>.azurecr.io/dotnetcore-docs-hello-world-windows:latest
+docker push <your_registry_name>.azurecr.io/dotnetcore-docs-hello-world-windows:latest
+```
+
+### Publish the Linux image to your Registry
+
+To build the Windows image locally and publish to ACR, run the following command:
+
+```docker
+docker build -f Dockerfile.linux -t dotnetcore-docs-hello-world-linux . 
+docker tag dotnetcore-docs-hello-world-windows <your_registry_name>.azurecr.io/dotnetcore-docs-hello-world-linux:latest
+docker push <your_registry_name>.azurecr.io/dotnetcore-docs-hello-world-linux:latest
+```
+
+# Contributing
+
+This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/). For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
