@@ -1,138 +1,104 @@
-# Docker
-# Build a Docker image
-# https://docs.microsoft.com/azure/devops/pipelines/languages/docker
-
+---
 trigger:
--branches:
-    include:
-      -main
-
+  -branches:
+    include: -main
 resources:
-- repo: self
-
+  -repo: self
 variables:
-  buildConfiguration: 'Release'
-  location: 'South India'
-  acrHostName: 'sacdockerappinlinemarket001acr.azurecr.io'
-  acrName: 'sacdockerappinlinemarket001acr'
-  rgName: 'sacdockerappinlinemarket001-rg'
-  imageName: 'sacdockerappinlinemarket001'
-  webAppName: 'sacdockerappinlinemarket001'
-  tag: '$(Build.BuildId)'
-
+  buildConfiguration: Release
+  location: South India
+  acrHostName: sacdockerappinlinemarket001acr.azurecr.io
+  acrName: sacdockerappinlinemarket001acr
+  rgName: sacdockerappinlinemarket001-rg
+  imageName: sacdockerappinlinemarket001
+  webAppName: sacdockerappinlinemarket001
+  tag: $(Build.BuildId)
 stages:
-- stage: Build
-  displayName: Build
-  jobs:
-  - job: Build
+  - stage: Build
     displayName: Build
-    pool:
-      vmImage: 'Ubuntu-16.04'
-
-    # Create or update the ACR resource  
-    steps:
-    - task: AzureResourceGroupDeployment@2
-      displayName: 'AZ Deploy: Create Azure Container Registry'
-      inputs:
-        azureSubscription: 'SVC_InlineMarket'
-        resourceGroupName: '$(rgName)'
-        location: '$(location)'
-        csmFile: '$(System.DefaultWorkingDirectory)/**/acr-template.json'
-        overrideParameter: -registryLocation '$(location)' -registrySKU standard
-
-    # Restore Dependencies
-    - task: DotNetCoreCLI@2
-      displayName: 'dot net restore'
-      inputs:
-        command: restore
-        projects: '**/*.csproj'
-
-    # Build App
-    - task: DotNetCoreCLI@2
-      displayName: 'dotnet build'
-      inputs:
-        command: build
-        projects: '**/*.csproj'
-        arguments: '--configuration $(buildConfiguration)' 
-
-    # Publish the App
-    - task: DotNetCoreCLI@2
-      displayName: 'dotnet publish'
-      inputs:
-        command: publish
-        publishWebProjects: True
-        arguments: '--configuration $(buildConfiguration) --output $(System.DefaultWorkingDirectory)/PublishedWebApp'
-        zipAfterPublsh: false
-
-    # Build container image
-    - task: Docker@1
-      displayName: 'Build container image'
-      inputs:
-        azureSubscriptionEndpoint: 'SVC_InlineMarket'
-        azureContainerRegistry: $(acrName)
-        imageName: $(imageName):$(Build.BuildId)
-        useDefaultContext: false
-        buildContext: $(System.DefaultWorkingDirectory)/PublishedWebApp'
-
-    # Push Container Image
-    - task: Docker@1
-      displayName: 'Push Container Image'
-      inputs:
-        azureSubscriptionEndpoint: 'SVC_InlineMarket'
-        azureContainerRegistry: $(acrName)
-        command: 'Push an image'
-        imageName: $(imageName):$(Build.BuildId)
-
-    # Copy ARM templates
-    - task: CopyFiles@2
-      displayName: 'Copy ARM template'
-      inpiuts:
-        sourceFolder: ArmTemplates
-        targetFolder: '$(build.artifactStagingDirectory)'
-
-    # publish the app as an artifact
-    - publish: $(Build.StagingDirectory)
-      artifact: app
-
-# Staging Release
-- stage: Staging
-  jobs:
-    job: Release
-    pool:
-      vmImage: 'Ubuntu-16.04'
-    steps:
-      # Don't clone the repo
-      - checkout: none
-
-      # Download the published app artifact
-      - download: current
-        artifact: app
-
-      # Create or Update Azure App Service
-      - task: AzureResourceGroupDeployment@2
-        displayName: 'Azure Deployment: Create Azure App Service'
-        inputS:
-          azureSubscription: 'SVC_InlineMarket'
-          resourceGroupName: '$(rgName)'
-          location: '$(location)'
-          csmFile: $(Pipeline.Workspace)/**/sac-azure-deploy.json
-          overrideParameters: '-webAppName $(webAppName) -hostingPlanName $(webAppName) -appInsightsLocation '$(location)''
-
-      # Deploy App Service
-      - task: AzureRMWebAppDeployment@3
-        displayName: 'Deploy Azure App Service'
-        inputs:
-          azureSubscription: 'SVC_InlineMarket'
-          appType: appLinux
-          webAppName: $(webAppName)
-          DockerNamespace: $(acrHostName)
-          DockerRepository: $(webAppName)
-          DockerImageTag: $(Build.BuildId)
-          WebAppUri: webAppUrl
-          TakeAppOfflineFlag: True
-          UseWebDeploy: True
-          RenameFilesFlag: True
-          
-
-
-
+    jobs:
+      - job: Build
+        displayName: Build
+        pool:
+          vmImage: Ubuntu-16.04
+        steps:
+          - task: AzureResourceGroupDeployment@2
+            displayName: "AZ Deploy: Create Azure Container Registry"
+            inputs:
+              azureSubscription: SVC_InlineMarket
+              resourceGroupName: $(rgName)
+              location: $(location)
+              csmFile: $(System.DefaultWorkingDirectory)/**/acr-template.json
+              overrideParameter: -registryLocation '$(location)' -registrySKU standard
+          - task: DotNetCoreCLI@2
+            displayName: dot net restore
+            inputs:
+              command: restore
+              projects: "**/*.csproj"
+          - task: DotNetCoreCLI@2
+            displayName: dotnet build
+            inputs:
+              command: build
+              projects: "**/*.csproj"
+              arguments: --configuration $(buildConfiguration)
+          - task: DotNetCoreCLI@2
+            displayName: dotnet publish
+            inputs:
+              command: publish
+              publishWebProjects: true
+              arguments: --configuration $(buildConfiguration) --output
+                $(System.DefaultWorkingDirectory)/PublishedWebApp
+              zipAfterPublsh: false
+          - task: Docker@1
+            displayName: Build container image
+            inputs:
+              azureSubscriptionEndpoint: SVC_InlineMarket
+              azureContainerRegistry: $(acrName)
+              imageName: $(imageName):$(Build.BuildId)
+              useDefaultContext: false
+              buildContext: $(System.DefaultWorkingDirectory)/PublishedWebApp'
+          - task: Docker@1
+            displayName: Push Container Image
+            inputs:
+              azureSubscriptionEndpoint: SVC_InlineMarket
+              azureContainerRegistry: $(acrName)
+              command: Push an image
+              imageName: $(imageName):$(Build.BuildId)
+          - task: CopyFiles@2
+            displayName: Copy ARM template
+            inpiuts:
+              sourceFolder: ArmTemplates
+              targetFolder: $(build.artifactStagingDirectory)
+          - publish: $(Build.StagingDirectory)
+            artifact: app
+  - stage: Staging
+    jobs:
+      job: Release
+      pool:
+        vmImage: Ubuntu-16.04
+      steps:
+        - checkout: none
+        - download: current
+          artifact: app
+        - task: AzureResourceGroupDeployment@2
+          displayName: "Azure Deployment: Create Azure App Service"
+          inputS:
+            azureSubscription: SVC_InlineMarket
+            resourceGroupName: $(rgName)
+            location: $(location)
+            csmFile: $(Pipeline.Workspace)/**/sac-azure-deploy.json
+            overrideParameters: -webAppName $(webAppName) -hostingPlanName $(webAppName)
+              -appInsightsLocation $(location)
+        - task: AzureRMWebAppDeployment@3
+          displayName: Deploy Azure App Service
+          inputs:
+            azureSubscription: SVC_InlineMarket
+            appType: appLinux
+            webAppName: $(webAppName)
+            DockerNamespace: $(acrHostName)
+            DockerRepository: $(webAppName)
+            DockerImageTag: $(Build.BuildId)
+            WebAppUri: webAppUrl
+            TakeAppOfflineFlag: true
+            UseWebDeploy: true
+            RenameFilesFlag: true
